@@ -1,5 +1,5 @@
 import numpy as np
-from sympy import symbols, Eq, solve
+from sympy import symbols, Eq, solve, Poly
 from scipy.optimize import fsolve
 def prob1():
     m_min = [26,26,32,42,51,61,67,66,60,49,39,31]
@@ -21,7 +21,10 @@ def prob1():
     for i in range(len(c_values)): #plug in our t for our quadratic formula
         res += c_values[i] * x ** i
     print("Formula: ", res)
-    return res
+    def P3_numeric(t): #lets me return this as a pluggable number function
+        return c_values[0] + c_values[1]*t + c_values[2]*t**2 + c_values[3]*t**3
+        
+    return res, P3_numeric
 
 #each month 31 days
 #avg for a month is 16th day
@@ -31,15 +34,28 @@ def calculate(poly):
     res = [poly.subs(x, day) for day in days]
     print(f"Prediction for June 4th: {res[0]:.2f} F, \nPrediction for Dec 25th: {res[1]:.2f} F")
 
-def find_days_at_temperature(poly, target_temp):
+def find_days_at_temperature(poly, P3_numeric):
+    target_temp = 64.89
     x = symbols('x')
-    # Define a function that will be zero when P3(t) = target_temp
-    poly = poly - 64.89
-    print(poly)
     
+    def temp_diff(t): #get temperature difference formula
+        return P3_numeric(t) - target_temp
+    
+    start_points = [31*i for i in range(13)]  # Start with each month
+    numerical_solutions = []
+    
+    for start in start_points:
+        sol = fsolve(temp_diff, start)[0] #solve the equation
+        # Check if solution is valid and not a duplicate
+        if 0 <= sol <= 365 and not any(abs(s - sol) < 0.01 for s in numerical_solutions): #if acceptable value
+            numerical_solutions.append(sol)
+    
+    numerical_solutions.sort()
+    
+    print("SOLUTION SET FOR part 3:", numerical_solutions)
+    print("Day 164.57 is June 10th I think?, 284.15 is October 6th I think?")
 
 if __name__ == '__main__':
-    polynomial = prob1()
+    polynomial,p3_numeric = prob1()
     calculate(polynomial)
-    target_temp = 64.89
-    find_days_at_temperature(polynomial, target_temp)
+    find_days_at_temperature(polynomial, p3_numeric)
